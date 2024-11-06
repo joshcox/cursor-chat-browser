@@ -5,9 +5,21 @@ import sqlite3 from 'sqlite3'
 import { open } from 'sqlite'
 import { existsSync } from 'fs'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const workspacePath = process.env.WORKSPACE_PATH || ''
+    // Get workspace path from cookies
+    const cookieHeader = request.headers.get('cookie')
+    const cookies = cookieHeader?.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=')
+      acc[key] = decodeURIComponent(value)
+      return acc
+    }, {} as Record<string, string>) || {}
+    
+    const workspacePath = cookies['workspacePath']
+    if (!workspacePath) {
+      return NextResponse.json({ error: 'Workspace path not configured' }, { status: 400 })
+    }
+
     const workspaces = []
     
     const entries = await fs.readdir(workspacePath, { withFileTypes: true })

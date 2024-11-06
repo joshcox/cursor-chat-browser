@@ -8,7 +8,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const workspacePath = process.env.WORKSPACE_PATH || ''
+    // Get workspace path from cookies
+    const cookieHeader = request.headers.get('cookie')
+    const cookies = cookieHeader?.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=')
+      acc[key] = decodeURIComponent(value)
+      return acc
+    }, {} as Record<string, string>) || {}
+    
+    const workspacePath = cookies['workspacePath']
+    if (!workspacePath) {
+      return NextResponse.json({ error: 'Workspace path not configured' }, { status: 400 })
+    }
+
     const dbPath = path.join(workspacePath, params.id, 'state.vscdb')
     const workspaceJsonPath = path.join(workspacePath, params.id, 'workspace.json')
 
